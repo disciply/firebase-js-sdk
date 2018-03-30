@@ -839,7 +839,6 @@ abstract class TestRunner {
       await this.syncEngine.start();
       await this.syncEngine.applyPrimaryState(isPrimary);
     });
-
   }
 
   private doApplyClientState(state: SpecClientState): Promise<void> {

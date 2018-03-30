@@ -680,8 +680,8 @@ export class SyncEngine implements RemoteSyncer, SharedClientStateSyncer {
     return this.remoteStore.disableNetwork();
   }
 
-  start() : Promise<void> {
+  start(): Promise<void> {
     // TODO(multitab): Read list of active targets and forward to RemoteStore
-   return this.enableNetwork();
+    return this.enableNetwork();
   }
 }
