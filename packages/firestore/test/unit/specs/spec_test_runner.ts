@@ -442,7 +442,6 @@ abstract class TestRunner {
     this.connection.reset();
     await this.persistence.start();
     await this.localStore.start();
-    await this.remoteStore.start();
     await this.sharedClientState.start();
 
     this.persistence.setPrimaryStateListener(isPrimary =>
@@ -811,11 +810,11 @@ abstract class TestRunner {
     // Make sure to execute all writes that are currently queued. This allows us
     // to assert on the total number of requests sent before shutdown.
     await this.remoteStore.fillWritePipeline();
-    await this.remoteStore.disableNetwork();
+    await this.syncEngine.disableNetwork();
   }
 
   private async doEnableNetwork(): Promise<void> {
-    await this.remoteStore.enableNetwork();
+    await this.syncEngine.enableNetwork();
   }
 
   private async doShutdown(): Promise<void> {
@@ -826,6 +825,7 @@ abstract class TestRunner {
   private async doRestart(): Promise<void> {
     // Reinitialize everything, except the persistence.
     // No local store to shutdown.
+    await this.sharedClientState.shutdown();
     await this.remoteStore.shutdown();
 
     this.init();
@@ -834,7 +834,8 @@ abstract class TestRunner {
     // interleaved events.
     await this.queue.enqueue(async () => {
       await this.localStore.start();
-      await this.remoteStore.start();
+      await this.sharedClientState.start();
+      await this.syncEngine.start();
     });
   }
 

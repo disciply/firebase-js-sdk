@@ -640,7 +640,7 @@ describeSpec('Writes:', [], () => {
 
   specTest(
     'Pending writes are shared between clients',
-    ['exclusive', 'multi-client'],
+    ['multi-client'],
     () => {
       const query = Query.atPath(path('collection'));
       const docALocal = doc(

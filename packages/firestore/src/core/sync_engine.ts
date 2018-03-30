@@ -105,6 +105,8 @@ class QueryView {
  * global async queue.
  */
 export class SyncEngine implements RemoteSyncer, SharedClientStateSyncer {
+  private networkEnabled = true;
+
   private viewHandler: ViewHandler | null = null;
   private errorHandler: ErrorHandler | null = null;
 
@@ -653,8 +655,7 @@ export class SyncEngine implements RemoteSyncer, SharedClientStateSyncer {
   // PORTING NOTE: Multi-tab only
   applyPrimaryState(isPrimary: boolean): Promise<void> {
     this.isPrimary = isPrimary;
-    // TODO(multitab): Don't enable the network if the user explicitly disabled it
-    if (this.isPrimary) {
+    if (this.isPrimary && this.networkEnabled) {
       return this.remoteStore.enableNetwork();
     } else {
       return this.remoteStore.disableNetwork();
@@ -664,5 +665,22 @@ export class SyncEngine implements RemoteSyncer, SharedClientStateSyncer {
   // PORTING NOTE: Multi-tab only
   getActiveClients(): Promise<ClientId[]> {
     return this.localStore.getActiveClients();
+  }
+
+  async enableNetwork(): Promise<void> {
+    this.networkEnabled = true;
+    if (this.isPrimary) {
+      return this.remoteStore.enableNetwork();
+    }
+  }
+
+  async disableNetwork(): Promise<void> {
+    // TODO(multi-tab): Release primary lease
+    this.networkEnabled = false;
+    return this.remoteStore.disableNetwork();
+  }
+
+  start() : void {
+    // TODO(multitab): Read list of active targets and forward to RemoteStore
   }
 }

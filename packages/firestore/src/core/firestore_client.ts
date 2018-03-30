@@ -174,7 +174,7 @@ export class FirestoreClient {
   /** Enables the network connection and requeues all pending operations. */
   enableNetwork(): Promise<void> {
     return this.asyncQueue.enqueue(() => {
-      return this.remoteStore.enableNetwork();
+      return this.syncEngine.enableNetwork();
     });
   }
 
@@ -333,12 +333,14 @@ export class FirestoreClient {
 
         this.eventMgr = new EventManager(this.syncEngine);
 
-        // NOTE: RemoteStore and SharedClientState depend on LocalStore (for
-        // persisting stream tokens, refilling mutation queue, etc.) so they must
-        // be started after LocalStore.
+        // PORTING NOTE: RemoteStore does not need an explicit start on web.
+
+        // NOTE: SyncEngine depends on both SharedClientState and LocalStore
+        // (for persisting stream tokens, refilling mutation queue, retrieving
+        // the list of active targets, etc.) so it must be started last.
         await this.localStore.start();
-        await this.remoteStore.start();
         await this.sharedClientState.start();
+        await this.syncEngine.start();
 
         // NOTE: This will immediately call the listener, so we make sure to
         // set it after localStore / remoteStore are started.
@@ -358,7 +360,7 @@ export class FirestoreClient {
   /** Disables the network connection. Pending operations will not complete. */
   disableNetwork(): Promise<void> {
     return this.asyncQueue.enqueue(() => {
-      return this.remoteStore.disableNetwork();
+      return this.syncEngine.disableNetwork();
     });
   }
 
