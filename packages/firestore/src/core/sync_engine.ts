@@ -105,7 +105,7 @@ class QueryView {
  * global async queue.
  */
 export class SyncEngine implements RemoteSyncer, SharedClientStateSyncer {
-  private networkEnabled = true;
+  private networkEnabled = false;
 
   private viewHandler: ViewHandler | null = null;
   private errorHandler: ErrorHandler | null = null;
@@ -680,7 +680,8 @@ export class SyncEngine implements RemoteSyncer, SharedClientStateSyncer {
     return this.remoteStore.disableNetwork();
   }
 
-  start() : void {
+  start() : Promise<void> {
     // TODO(multitab): Read list of active targets and forward to RemoteStore
+   return this.enableNetwork();
   }
 }

@@ -443,6 +443,7 @@ abstract class TestRunner {
     await this.persistence.start();
     await this.localStore.start();
     await this.sharedClientState.start();
+    await this.syncEngine.start();
 
     this.persistence.setPrimaryStateListener(isPrimary =>
       this.syncEngine.applyPrimaryState(isPrimary)
@@ -823,9 +824,10 @@ abstract class TestRunner {
   }
 
   private async doRestart(): Promise<void> {
+    const isPrimary = this.isPrimaryClient;
+
     // Reinitialize everything, except the persistence.
     // No local store to shutdown.
-    await this.sharedClientState.shutdown();
     await this.remoteStore.shutdown();
 
     this.init();
@@ -834,9 +836,10 @@ abstract class TestRunner {
     // interleaved events.
     await this.queue.enqueue(async () => {
       await this.localStore.start();
-      await this.sharedClientState.start();
       await this.syncEngine.start();
+      await this.syncEngine.applyPrimaryState(isPrimary);
     });
+
   }
 
   private doApplyClientState(state: SpecClientState): Promise<void> {
