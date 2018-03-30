@@ -640,7 +640,7 @@ export class LocalStore {
    * the store can be used to manage its view.
    */
   allocateQuery(query: Query): Promise<QueryData> {
-    return this.persistence.runTransaction('Allocate query', true, txn => {
+    return this.persistence.runTransaction('Allocate query', false, txn => {
       let queryData: QueryData;
       return this.queryCache
         .getQueryData(txn, query)
@@ -652,6 +652,7 @@ export class LocalStore {
             queryData = cached;
             return PersistencePromise.resolve();
           } else {
+            // TODO(multi-tab): targetIdGenerator is not multi-tab safe
             const targetId = this.targetIdGenerator.next();
             queryData = new QueryData(query, targetId, QueryPurpose.Listen);
             return this.queryCache.addQueryData(txn, queryData);
@@ -710,7 +711,7 @@ export class LocalStore {
    * returns the results.
    */
   executeQuery(query: Query): Promise<DocumentMap> {
-    return this.persistence.runTransaction('Execute query', true, txn => {
+    return this.persistence.runTransaction('Execute query', false, txn => {
       return this.localDocuments.getDocumentsMatchingQuery(txn, query);
     });
   }
@@ -722,7 +723,7 @@ export class LocalStore {
   remoteDocumentKeys(targetId: TargetId): Promise<DocumentKeySet> {
     return this.persistence.runTransaction(
       'Remote document keys',
-      true,
+      false,
       txn => {
         return this.queryCache.getMatchingKeysForTargetId(txn, targetId);
       }

@@ -138,8 +138,8 @@ export class RemoteStore {
    * Starts up the remote store, creating streams, restoring state from
    * LocalStore, etc.
    */
-  start(): Promise<void> {
-    return this.enableNetwork();
+  async start(): Promise<void> {
+    // return this.enableNetwork();
   }
 
   private isNetworkEnabled(): boolean {

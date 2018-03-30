@@ -434,6 +434,10 @@ abstract class TestRunner {
 
   protected abstract getSharedClientState(): SharedClientState;
 
+  get isPrimaryClient() {
+    return this.syncEngine.isPrimaryClient;
+  }
+
   async start(): Promise<void> {
     this.connection.reset();
     await this.persistence.start();
@@ -531,8 +535,11 @@ abstract class TestRunner {
         'targetId assigned to listen'
       );
     });
-    // Open should always have happened after a listen
-    await this.connection.waitForWatchOpen();
+
+    if (this.isPrimaryClient) {
+      // Open should always have happened after a listen
+      await this.connection.waitForWatchOpen();
+    }
   }
 
   private async doUnlisten(listenSpec: SpecUserUnlisten): Promise<void> {
@@ -929,11 +936,19 @@ abstract class TestRunner {
   }
 
   private validateActiveTargets() {
+    if (!this.isPrimaryClient) {
+      expect(obj.isEmpty(this.connection.activeTargets)).to.be.true;
+      return;
+    }
+
     const actualTargets = obj.shallowCopy(this.connection.activeTargets);
     obj.forEachNumber(this.expectedActiveTargets, (targetId, expected) => {
       expect(obj.contains(actualTargets, targetId)).to.equal(
         true,
-        'Expected active target not found: ' + JSON.stringify(expected)
+        'Expected active target not found: ' +
+          JSON.stringify(expected) +
+          ' ' +
+          JSON.stringify(actualTargets)
       );
       const actualTarget = actualTargets[targetId];
 
@@ -993,7 +1008,6 @@ abstract class TestRunner {
           expectedChanges.push(this.parseChange(ChangeType.Metadata, change));
         });
       }
-
       expect(actual.view!.docChanges).to.deep.equal(expectedChanges);
 
       expect(actual.view!.hasPendingWrites).to.equal(

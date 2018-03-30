@@ -653,7 +653,12 @@ export class SyncEngine implements RemoteSyncer, SharedClientStateSyncer {
   // PORTING NOTE: Multi-tab only
   applyPrimaryState(isPrimary: boolean): Promise<void> {
     this.isPrimary = isPrimary;
-    return Promise.resolve();
+    // TODO(multitab): Don't enable the network if the user explicitly disabled it
+    if (this.isPrimary) {
+      return this.remoteStore.enableNetwork();
+    } else {
+      return this.remoteStore.disableNetwork();
+    }
   }
 
   // PORTING NOTE: Multi-tab only

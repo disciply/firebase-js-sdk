@@ -21,7 +21,7 @@ import { Code } from '../../../src/util/error';
 import { doc, path } from '../../util/helpers';
 
 import { describeSpec, specTest } from './describe_spec';
-import { spec } from './spec_builder';
+import { client, spec } from './spec_builder';
 import { RpcError } from './spec_rpc_error';
 
 describeSpec('Writes:', [], () => {
@@ -637,4 +637,36 @@ describeSpec('Writes:', [], () => {
       .writeAcks(1, { expectUserCallback: false })
       .expectNumOutstandingWrites(0);
   });
+
+  specTest(
+    'Pending writes are shared between clients',
+    ['exclusive', 'multi-client'],
+    () => {
+      const query = Query.atPath(path('collection'));
+      const docALocal = doc(
+        'collection/a',
+        0,
+        { v: 1 },
+        { hasLocalMutations: true }
+      );
+
+      return client(0)
+        .userListens(query)
+        .watchAcksFull(query, 500)
+        .expectEvents(query, {})
+        .userSets('collection/a', { v: 1 })
+        .expectEvents(query, {
+          hasPendingWrites: true,
+          added: [docALocal]
+        })
+        .client(1)
+        .userListens(query)
+        .expectEvents(query, {
+          hasPendingWrites: true,
+          fromCache: true,
+          added: [docALocal]
+        });
+      // TODO(multi-tab): Add a pending write that is shared over WebStorage
+    }
+  );
 });
